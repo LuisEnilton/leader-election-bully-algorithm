@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// nodeAddressByID: It includes nodes currently in cluster
+// nodeAddressByID: Lista todos os nós
 var nodeAddressByID = map[string]string{
 	"node-01": "node-01:6001",
 	"node-02": "node-02:6002",
@@ -53,7 +53,7 @@ func (node *Node) ConnectToPeers() {
 		reply, _ := node.CommunicateWithPeer(rpcClient, pingMessage)
 
 		if reply.IsPongMessage() {
-			log.Debug().Msgf("%s got pong message from %s", node.ID, peerID)
+			log.Debug().Msgf("%s recebeu mensagem PONG de %s", node.ID, peerID)
 			node.Peers.Add(peerID, rpcClient)
 		}
 	}
@@ -67,6 +67,9 @@ retry:
 		time.Sleep(50 * time.Millisecond)
 		goto retry
 	}
+
+	log.Info().Msgf("Conectado ao nó na porta %s", peerAddr)
+
 	return client
 }
 
@@ -89,7 +92,7 @@ func (node *Node) HandleMessage(args Message, reply *Message) error {
 		reply.Type = ALIVE
 	case ELECTED:
 		leaderID := args.FromPeerID
-		log.Info().Msgf("Election is done. %s has a new leader %s", node.ID, leaderID)
+		log.Info().Msgf("Eleição terminada. %s tem um novo lider %s", node.ID, leaderID)
 		node.eventBus.Emit(event.LeaderElected, leaderID)
 		reply.Type = OK
 	case PING:
@@ -110,7 +113,7 @@ func (node *Node) Elect() {
 			continue
 		}
 
-		log.Debug().Msgf("%s send ELECTION message to peer %s", node.ID, peer.ID)
+		log.Debug().Msgf("%s Mandou ELECTION mensagem para peer %s", node.ID, peer.ID)
 		electionMessage := Message{FromPeerID: node.ID, Type: ELECTION}
 
 		reply, _ := node.CommunicateWithPeer(peer.RPCClient, electionMessage)
@@ -124,7 +127,7 @@ func (node *Node) Elect() {
 		leaderID := node.ID
 		electedMessage := Message{FromPeerID: leaderID, Type: ELECTED}
 		node.BroadcastMessage(electedMessage)
-		log.Info().Msgf("%s is a new leader", node.ID)
+		log.Info().Msgf("%s é o novo lider", node.ID)
 	}
 }
 
@@ -149,14 +152,14 @@ ping:
 	pingMessage := Message{FromPeerID: node.ID, Type: PING}
 	reply, err := node.CommunicateWithPeer(leader.RPCClient, pingMessage)
 	if err != nil {
-		log.Info().Msgf("Leader is down, new election about to start!")
+		log.Info().Msgf("Lider caiu, nova eleição prestes a começar")
 		node.Peers.Delete(leaderID)
 		node.Elect()
 		return
 	}
 
 	if reply.IsPongMessage() {
-		log.Debug().Msgf("Leader %s sent PONG message", reply.FromPeerID)
+		log.Debug().Msgf("Lider %s mandou PONG mensagem", reply.FromPeerID)
 		time.Sleep(3 * time.Second)
 		goto ping
 	}

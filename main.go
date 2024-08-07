@@ -13,8 +13,8 @@ import (
 
 func main() {
 	setLogConfigurations()
-
 	nodeID, err := getNodeID()
+
 	if err != nil {
 		log.Fatal().Err(err)
 	}
@@ -34,7 +34,7 @@ func main() {
 
 	node.ConnectToPeers()
 
-	log.Info().Msgf("%s is aware of own peers %s", node.ID, node.Peers.ToIDs())
+	log.Info().Msgf("%s está ciente dos vizinhos %s", node.ID, node.Peers.ToIDs())
 
 	warmupTime := 5 * time.Second
 	time.Sleep(warmupTime)
@@ -44,8 +44,8 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	<-c
 }
-
 func getNodeID() (string, error) {
+
 	if len(os.Args) < 2 {
 		return "", errors.New("node id required")
 	}
